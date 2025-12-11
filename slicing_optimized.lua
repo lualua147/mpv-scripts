@@ -11,8 +11,8 @@ local assdraw = require "mp.assdraw"
 local cut_pos = nil  -- 记录开始时间点
 local crop_area = nil  -- 记录裁剪区域 {x, y, w, h}
 local crop_mode = false  -- 是否在框选模式
-local crop_step = 0  -- 框选步骤 (0:未开始, 1:等待选择左上角, 2:等待选择右下角)
-local crop_points = {}  -- 存储两个点
+--local crop_step = 0  -- 框选步骤 (0:未开始, 1:等待选择左上角, 2:等待选择右下角)
+--local crop_points = {}  -- 存储两个点
 local osd_id = nil  -- OSD绘图ID
 
 -- 鼠标框选相关变量
@@ -141,6 +141,8 @@ function show_crop_status()
     if crop_area then
         mp.osd_message(string.format("当前裁剪区域: %dx%d @(%d,%d)", 
             crop_area.w, crop_area.h, crop_area.x, crop_area.y), 3)
+			local time = mp.get_property_number("time-pos")
+    --mp.osd_message(string.format("当前: %s", seconds_to_timestamp(time)), 2)
     else
         mp.osd_message("未设置裁剪区域 (按'm'键启动框选模式)", 3)
     end
@@ -683,14 +685,15 @@ function handle_mouse_click()
         -- 保存裁剪区域
         crop_area = {x = x, y = y, w = w, h = h}
         
-        -- 显示成功信息
-        mp.osd_message(string.format("✓ 已设置裁剪区域: %dx%d @(%d,%d)", w, h, x, y), 3)
+        
         
         -- 完成框选
         cancel_crop_selection()
+		-- 显示成功信息
+        mp.osd_message(string.format("✓ 已设置裁剪区域: %dx%d @(%d,%d)", w, h, x, y), 5)
         
         -- 清除矩形绘制
-        clear_rectangle()
+        --clear_rectangle()
     end
 end
 
@@ -711,7 +714,9 @@ function start_crop()
     crop_mode = true
     crop_first_corner = nil
     crop_cursor.x, crop_cursor.y = mp.get_mouse_pos()
-    
+	
+    -- 清除OSD绘制
+    clear_rectangle()
     -- 绑定鼠标事件
     mouse_move_binding = mp.add_forced_key_binding("MOUSE_MOVE", "crop-mouse-move", handle_mouse_move)
     mouse_click_binding = mp.add_forced_key_binding("MOUSE_BTN0", "crop-mouse-click", handle_mouse_click)
@@ -741,13 +746,13 @@ function cancel_crop_selection()
     end
     
     -- 清除OSD绘制
-    clear_rectangle()
+    --clear_rectangle()
     
     -- 取消注册重绘函数
     mp.unregister_idle(draw_crop_zone)
     
     mp.osd_message("已退出框选模式", 2)
-    msg.info("退出框选模式")
+    --msg.info("退出框选模式")
 end
 
 -- ESC键处理：取消框选
@@ -762,7 +767,7 @@ end
 -- 键盘绑定
 mp.add_key_binding("c", "cut_marker", toggle_cut_marker)
 mp.add_key_binding("x", "cancel_cut", cancel_marker)
-mp.add_key_binding("h", "show_time", show_current_time)
+mp.add_key_binding("h", "show_crop_status", show_crop_status)
 mp.add_key_binding("m", "start-crop", start_crop)
 mp.add_key_binding("C", "clear_crop", clear_crop)  -- Shift+C 清除裁剪
 mp.add_key_binding("ESC", "cancel-crop", cancel_crop_selection)  -- ESC 取消框选
@@ -775,7 +780,7 @@ msg.info("  2. 按照提示，用鼠标点击选择左上角和右下角")
 msg.info("  3. 自动设置裁剪区域并显示预览框")
 msg.info("  4. 按 'c' 标记开始，再按 'c' 标记结束并剪切")
 msg.info("  5. 按 'C' (Shift+c) 清除裁剪区域")
-msg.info("  6. 按 'h' 显示当前时间，按 'x' 取消标记")
+msg.info("  6. 按 'h' 显示当前剪切区域，按 'x' 取消标记")
 msg.info("  7. 框选模式中按ESC取消选择")
 msg.info("")
 msg.info("注意: 裁剪区域会应用于后续的所有剪切操作")
